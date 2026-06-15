@@ -12,6 +12,7 @@ class Database:
     def __init__(self, db_path: str = DB_PATH):
         self.db_path = db_path
         self._init_schema()
+        self._migrate_schema()
 
     def get_connection(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_path)
@@ -79,6 +80,46 @@ class Database:
                 "INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)",
                 ("user", user_hash, "user")
             )
+
+        conn.commit()
+        conn.close()
+
+    def _migrate_schema(self):
+        """
+        Adds missing columns to existing tables.
+        This fixes 'No item with that key' errors caused by an old DB
+        that was created before new columns were added.
+        """
+        conn = self.get_connection()
+        cursor = conn.cursor()
+
+        # Get existing columns for each table
+        def get_columns(table: str) -> list[str]:
+            cursor.execute(f"PRAGMA table_info({table})")
+            return [row["name"] for row in cursor.fetchall()]
+
+        # products table migrations
+        product_cols = get_columns("products")
+        if "low_stock_threshold" not in product_cols:
+            cursor.execute("ALTER TABLE products ADD COLUMN low_stock_threshold INTEGER NOT NULL DEFAULT 10")
+        if "supplier_id" not in product_cols:
+            cursor.execute("ALTER TABLE products ADD COLUMN supplier_id INTEGER")
+
+        # movements table migrations
+        movement_cols = get_columns("movements")
+        if "product_name" not in movement_cols:
+            cursor.execute("ALTER TABLE movements ADD COLUMN product_name TEXT NOT NULL DEFAULT ''")
+        if "note" not in movement_cols:
+            cursor.execute("ALTER TABLE movements ADD COLUMN note TEXT DEFAULT ''")
+
+        # suppliers table migrations
+        supplier_cols = get_columns("suppliers")
+        if "contact" not in supplier_cols:
+            cursor.execute("ALTER TABLE suppliers ADD COLUMN contact TEXT DEFAULT ''")
+        if "email" not in supplier_cols:
+            cursor.execute("ALTER TABLE suppliers ADD COLUMN email TEXT DEFAULT ''")
+        if "address" not in supplier_cols:
+            cursor.execute("ALTER TABLE suppliers ADD COLUMN address TEXT DEFAULT ''")
 
         conn.commit()
         conn.close()
