@@ -514,6 +514,37 @@ wheels = [
 ]
 
 [[package]]
+name = "pyqt6-charts"
+version = "6.11.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyqt6" },
+    { name = "pyqt6-charts-qt6" },
+    { name = "pyqt6-sip" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c0/7f/2bd22df06ba836b6a76ec193a8085dab4a666e320326e41bccc7b2695882/pyqt6_charts-6.11.0.tar.gz", hash = "sha256:1091cd919806a3ce05d2276729f79be4ecbd0a939500a8899026c3ef5769c650", size = 43447, upload-time = "2026-03-30T09:17:03.647Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6b/a3/8bb549b1ff90554488085753f698f3df325ad08e7cf5d8f4607ef8be51a7/pyqt6_charts-6.11.0-cp310-abi3-macosx_10_14_universal2.whl", hash = "sha256:8fd390c9f15f9d5a96c0c50a5777acf517f73425d7afe8c422269a46d26cea9e", size = 491296, upload-time = "2026-03-30T09:16:56.984Z" },
+    { url = "https://files.pythonhosted.org/packages/41/48/5b217d1063d44b4d59dca2814e114ec47b7d5815f26b74c5146adbf1f6a8/pyqt6_charts-6.11.0-cp310-abi3-manylinux_2_34_x86_64.whl", hash = "sha256:1d65c31b331fbdfbf3a4a015c37ba56bfe5694476b831b22d9c8c29d142312d0", size = 331587, upload-time = "2026-03-30T09:16:58.274Z" },
+    { url = "https://files.pythonhosted.org/packages/e3/5a/22cfd4ef799352a922d830b8da773ee3704e0441b8e66a38813b4da2e194/pyqt6_charts-6.11.0-cp310-abi3-manylinux_2_39_aarch64.whl", hash = "sha256:36abb31a401121f988a1967b1f63be0b30d4922e4f68070eb008c76722d386b8", size = 323276, upload-time = "2026-03-30T09:16:59.75Z" },
+    { url = "https://files.pythonhosted.org/packages/c0/80/ea8eae946b7cf23ae1a31c880093d3c2f1424066c614447e29781696e723/pyqt6_charts-6.11.0-cp310-abi3-win_amd64.whl", hash = "sha256:14572f63cbecc4413f676c9c16728f61b9ba9684faf7da5cfde6a4ad026e47a6", size = 290755, upload-time = "2026-03-30T09:17:01.288Z" },
+    { url = "https://files.pythonhosted.org/packages/89/4e/693c8f662a52dcdfc1a3ed81ce85184c74d1824ea8a2e5a3c8e117ab2995/pyqt6_charts-6.11.0-cp310-abi3-win_arm64.whl", hash = "sha256:72d7f1bffa73c85d20cc8ca89bb09c075d52f838dca6255b7a4a01b8d42cdea4", size = 248201, upload-time = "2026-03-30T09:17:02.781Z" },
+]
+
+[[package]]
+name = "pyqt6-charts-qt6"
+version = "6.11.1"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/08/93/859e3c0526ac29c7e1c71b5b60013032bc0a97f176363f9a6c12517d9c64/pyqt6_charts_qt6-6.11.1-py3-none-macosx_10_14_x86_64.whl", hash = "sha256:d93240d994ea8570418e8738abf3e41e1e05260c25e3bdd6f450f3842e2a8dd8", size = 882533, upload-time = "2026-05-15T11:27:25.175Z" },
+    { url = "https://files.pythonhosted.org/packages/0c/fc/10e5a36d866abf1d6e17cd43fe22f8f9cc3ccc24bdf2f9fcc7db8f039ed4/pyqt6_charts_qt6-6.11.1-py3-none-macosx_11_0_arm64.whl", hash = "sha256:356bde4847ab2019a64cd75557d5abc95ecb436522276d16f265d384a291f6ee", size = 778825, upload-time = "2026-05-15T11:27:28.327Z" },
+    { url = "https://files.pythonhosted.org/packages/fc/04/4c180b4c00f053a03d5dab7de49bbc930e71a5db73d35007b417598c3a95/pyqt6_charts_qt6-6.11.1-py3-none-manylinux_2_34_x86_64.whl", hash = "sha256:cae9dac7dd3c420aa47101bb8eba45226d9a9690b4f34573f4a1bbc3808ee7af", size = 1011460, upload-time = "2026-05-15T11:27:30.732Z" },
+    { url = "https://files.pythonhosted.org/packages/2f/59/cda29959c190e29cda49f9e823c236fccac1c897e71803e462e3821a4323/pyqt6_charts_qt6-6.11.1-py3-none-manylinux_2_39_aarch64.whl", hash = "sha256:ba3311e1f411dfe9f401faf41569df6a7f0608d453bb73fb39c9a7bb5e1fc8b7", size = 1028222, upload-time = "2026-05-15T11:27:33.269Z" },
+    { url = "https://files.pythonhosted.org/packages/e7/fd/cd68673049386b65ab77c145b1313ff2865fd092a30829e9fc250e8299d0/pyqt6_charts_qt6-6.11.1-py3-none-win_amd64.whl", hash = "sha256:04be98fb1eb2cf7808746f18dca8a7f8948eb649abc2a09f0bdbb4f272eb6d3e", size = 895416, upload-time = "2026-05-15T11:27:35.681Z" },
+    { url = "https://files.pythonhosted.org/packages/a8/84/3898935b2e07baaf6b10a09e8fd76ae778fd4a30e10e17ca1428e3dcd7ff/pyqt6_charts_qt6-6.11.1-py3-none-win_arm64.whl", hash = "sha256:0c2b02cbdc39936402e8ac2f6ad5c1f77e969405ca7c08d7815f6b6f55b203bf", size = 741132, upload-time = "2026-05-15T11:27:37.793Z" },
+]
+
+[[package]]
 name = "pyqt6-qt6"
 version = "6.11.1"
 source = { registry = "https://pypi.org/simple" }
@@ -582,10 +613,12 @@ source = { virtual = "." }
 dependencies = [
     { name = "matplotlib" },
     { name = "pyqt6" },
+    { name = "pyqt6-charts" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "matplotlib", specifier = ">=3.11.0" },
     { name = "pyqt6", specifier = ">=6.6.0" },
+    { name = "pyqt6-charts", specifier = ">=6.11.0" },
 ]

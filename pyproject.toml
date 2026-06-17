@@ -5,7 +5,8 @@ description = "Professional Warehouse Management ERP built with PyQt6 and SQLite
 requires-python = ">=3.11"
 dependencies = [
     "matplotlib>=3.11.0",
-    "PyQt6>=6.6.0",
+    "pyqt6>=6.6.0",
+    "pyqt6-charts>=6.11.0",
 ]
 
 [tool.uv]
