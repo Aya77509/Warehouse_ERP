@@ -1,10 +1,10 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
     QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox, QComboBox,
-    QSpinBox, QDialog, QFormLayout, QDialogButtonBox
+    QSpinBox, QDialog, QFormLayout, QDialogButtonBox, QDateEdit, QCheckBox
 )
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QFont
+from PyQt6.QtCore import Qt, QDate
+from PyQt6.QtGui import QFont, QColor
 
 from Kernel.product_service import ProductService
 from Kernel.supplier_service import SupplierService
@@ -37,6 +37,17 @@ class ProductDialog(QDialog):
         for s in self.supplier_service.list_suppliers():
             self.supplier_combo.addItem(s.name, s.id)
 
+        # Expiration date (optional)
+        self.no_expiration_checkbox = QCheckBox("No expiration date")
+        self.no_expiration_checkbox.setChecked(True)
+        self.no_expiration_checkbox.stateChanged.connect(self._toggle_expiration_input)
+
+        self.expiration_input = QDateEdit()
+        self.expiration_input.setCalendarPopup(True)
+        self.expiration_input.setDisplayFormat("yyyy-MM-dd")
+        self.expiration_input.setDate(QDate.currentDate())
+        self.expiration_input.setEnabled(False)
+
         if self.product:
             self.name_input.setText(self.product.name)
             self.quantity_input.setValue(self.product.quantity)
@@ -45,23 +56,37 @@ class ProductDialog(QDialog):
                 index = self.supplier_combo.findData(self.product.supplier_id)
                 if index >= 0:
                     self.supplier_combo.setCurrentIndex(index)
+            if self.product.expiration_date:
+                self.no_expiration_checkbox.setChecked(False)
+                qdate = QDate.fromString(self.product.expiration_date, "yyyy-MM-dd")
+                if qdate.isValid():
+                    self.expiration_input.setDate(qdate)
 
         layout.addRow("Name:", self.name_input)
         layout.addRow("Quantity:", self.quantity_input)
         layout.addRow("Low Stock Threshold:", self.threshold_input)
         layout.addRow("Supplier:", self.supplier_combo)
+        layout.addRow("", self.no_expiration_checkbox)
+        layout.addRow("Expiration Date:", self.expiration_input)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addRow(buttons)
 
+    def _toggle_expiration_input(self, state):
+        self.expiration_input.setEnabled(not self.no_expiration_checkbox.isChecked())
+
     def get_data(self) -> dict:
+        expiration_date = None
+        if not self.no_expiration_checkbox.isChecked():
+            expiration_date = self.expiration_input.date().toString("yyyy-MM-dd")
         return {
             "name": self.name_input.text(),
             "quantity": self.quantity_input.value(),
             "low_stock_threshold": self.threshold_input.value(),
-            "supplier_id": self.supplier_combo.currentData()
+            "supplier_id": self.supplier_combo.currentData(),
+            "expiration_date": expiration_date
         }
 
 
@@ -113,8 +138,8 @@ class ProductView(QWidget):
         layout.addLayout(toolbar)
 
         # Table
-        self.table = QTableWidget(0, 5)
-        self.table.setHorizontalHeaderLabels(["ID", "Name", "Quantity", "Low Stock Threshold", "Supplier"])
+        self.table = QTableWidget(0, 6)
+        self.table.setHorizontalHeaderLabels(["ID", "Name", "Quantity", "Low Stock Threshold", "Supplier", "Expiration"])
         self.table.setStyleSheet("""
             QTableWidget {
                 background-color: #2a3142;
@@ -195,6 +220,16 @@ class ProductView(QWidget):
                 self.table.setItem(row, 3, QTableWidgetItem(str(p.low_stock_threshold)))
                 supplier_name = suppliers.get(p.supplier_id, "—") if p.supplier_id else "—"
                 self.table.setItem(row, 4, QTableWidgetItem(supplier_name))
+
+                if p.expiration_date:
+                    exp_item = QTableWidgetItem(p.expiration_date)
+                    if p.is_expired():
+                        exp_item.setForeground(QColor("#ef4444"))
+                    elif p.is_expiring_soon():
+                        exp_item.setForeground(QColor("#f59e0b"))
+                else:
+                    exp_item = QTableWidgetItem("—")
+                self.table.setItem(row, 5, exp_item)
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to load products: {e}")
 
@@ -231,6 +266,7 @@ class ProductView(QWidget):
                 product.quantity = data["quantity"]
                 product.low_stock_threshold = data["low_stock_threshold"]
                 product.supplier_id = data["supplier_id"]
+                product.expiration_date = data["expiration_date"]
                 self.product_service.update_product(product)
                 self.refresh()
                 self._notify_change()

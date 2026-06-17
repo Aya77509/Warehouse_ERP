@@ -41,6 +41,7 @@ class Database:
                 quantity INTEGER NOT NULL DEFAULT 0,
                 low_stock_threshold INTEGER NOT NULL DEFAULT 10,
                 supplier_id INTEGER,
+                expiration_date TEXT,
                 FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL
             )
         """)
@@ -104,6 +105,8 @@ class Database:
             cursor.execute("ALTER TABLE products ADD COLUMN low_stock_threshold INTEGER NOT NULL DEFAULT 10")
         if "supplier_id" not in product_cols:
             cursor.execute("ALTER TABLE products ADD COLUMN supplier_id INTEGER")
+        if "expiration_date" not in product_cols:
+            cursor.execute("ALTER TABLE products ADD COLUMN expiration_date TEXT")
 
         # movements table migrations
         movement_cols = get_columns("movements")

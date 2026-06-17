@@ -9,13 +9,14 @@ class ProductService:
         self.product_repo = product_repo
 
     def create_product(self, name: str, quantity: int, low_stock_threshold: int = 10,
-                        supplier_id: int | None = None) -> Product:
+                        supplier_id: int | None = None, expiration_date: str | None = None) -> Product:
         product = Product(
             id=None,
             name=name.strip(),
             quantity=quantity,
             low_stock_threshold=low_stock_threshold,
-            supplier_id=supplier_id
+            supplier_id=supplier_id,
+            expiration_date=expiration_date
         )
         product.validate()
         product.id = self.product_repo.add(product)
@@ -52,6 +53,9 @@ class ProductService:
 
     def get_low_stock_products(self) -> list[Product]:
         return self.product_repo.get_low_stock()
+
+    def get_expiring_soon_products(self, threshold_days: int = 30) -> list[Product]:
+        return self.product_repo.get_expiring_soon(threshold_days)
 
     def get_total_stock(self) -> int:
         return self.product_repo.get_total_stock()

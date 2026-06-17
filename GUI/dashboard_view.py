@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame,
-    QTableWidget, QTableWidgetItem, QHeaderView
+    QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
@@ -46,6 +46,7 @@ class DashboardView(QWidget):
         super().__init__()
         self.product_service = product_service
         self.inventory_service = inventory_service
+        self._alert_shown_this_session = False
         self._build_ui()
         self.refresh()
 
@@ -130,6 +131,7 @@ class DashboardView(QWidget):
             total_products = self.product_service.get_total_products()
             total_stock = self.product_service.get_total_stock()
             low_stock_products = self.product_service.get_low_stock_products()
+            expiring_products = self.product_service.get_expiring_soon_products()
             recent_movements = self.inventory_service.get_recent_movements(10)
 
             self.total_products_card.set_value(str(total_products))
@@ -156,5 +158,35 @@ class DashboardView(QWidget):
                 type_item.setForeground(Qt.GlobalColor.green if m.movement_type.value == "IN" else Qt.GlobalColor.red)
                 self.recent_table.setItem(row, 2, type_item)
                 self.recent_table.setItem(row, 3, QTableWidgetItem(str(m.quantity)))
+
+            if not self._alert_shown_this_session:
+                self._alert_shown_this_session = True
+                self._show_startup_alert(low_stock_products, expiring_products)
         except Exception as e:
             print(f"Dashboard refresh error: {e}")
+
+    def _show_startup_alert(self, low_stock_products, expiring_products):
+        """Shows a one-time popup summarizing low stock and expiring products."""
+        if not low_stock_products and not expiring_products:
+            return
+
+        lines = []
+        if low_stock_products:
+            lines.append(f"⚠ {len(low_stock_products)} product(s) are low on stock:")
+            for p in low_stock_products[:5]:
+                lines.append(f"   • {p.name} (qty: {p.quantity})")
+            if len(low_stock_products) > 5:
+                lines.append(f"   ...and {len(low_stock_products) - 5} more")
+
+        if expiring_products:
+            if lines:
+                lines.append("")
+            lines.append(f"⏳ {len(expiring_products)} product(s) are expired or expiring soon:")
+            for p in expiring_products[:5]:
+                days = p.days_until_expiration()
+                status = "EXPIRED" if days is not None and days < 0 else f"in {days} day(s)"
+                lines.append(f"   • {p.name} — {status} ({p.expiration_date})")
+            if len(expiring_products) > 5:
+                lines.append(f"   ...and {len(expiring_products) - 5} more")
+
+        QMessageBox.warning(self, "Inventory Alerts", "\n".join(lines))

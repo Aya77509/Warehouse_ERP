@@ -30,9 +30,10 @@ class ProductRepository:
             cursor = conn.cursor()
             new_id = self._get_smallest_available_id(cursor)
             cursor.execute(
-                "INSERT INTO products (id, name, quantity, low_stock_threshold, supplier_id) "
-                "VALUES (?, ?, ?, ?, ?)",
-                (new_id, product.name, product.quantity, product.low_stock_threshold, product.supplier_id)
+                "INSERT INTO products (id, name, quantity, low_stock_threshold, supplier_id, expiration_date) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (new_id, product.name, product.quantity, product.low_stock_threshold,
+                 product.supplier_id, product.expiration_date)
             )
             conn.commit()
             return new_id
@@ -44,8 +45,9 @@ class ProductRepository:
         try:
             cursor = conn.cursor()
             cursor.execute(
-                "UPDATE products SET name=?, quantity=?, low_stock_threshold=?, supplier_id=? WHERE id=?",
-                (product.name, product.quantity, product.low_stock_threshold, product.supplier_id, product.id)
+                "UPDATE products SET name=?, quantity=?, low_stock_threshold=?, supplier_id=?, expiration_date=? WHERE id=?",
+                (product.name, product.quantity, product.low_stock_threshold,
+                 product.supplier_id, product.expiration_date, product.id)
             )
             conn.commit()
         finally:
@@ -118,6 +120,21 @@ class ProductRepository:
         finally:
             conn.close()
 
+    def get_expiring_soon(self, threshold_days: int = 30) -> list[Product]:
+        """Returns products whose expiration_date is within threshold_days (or already expired)."""
+        from datetime import datetime, timedelta
+        limit_date = (datetime.now().date() + timedelta(days=threshold_days)).strftime("%Y-%m-%d")
+        conn = self.db.get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM products WHERE expiration_date IS NOT NULL AND expiration_date <= ? ORDER BY expiration_date",
+                (limit_date,)
+            )
+            return [self._row_to_product(row) for row in cursor.fetchall()]
+        finally:
+            conn.close()
+
     @staticmethod
     def _row_to_product(row) -> Product:
         return Product(
@@ -125,5 +142,6 @@ class ProductRepository:
             name=row["name"],
             quantity=row["quantity"],
             low_stock_threshold=row["low_stock_threshold"],
-            supplier_id=row["supplier_id"]
+            supplier_id=row["supplier_id"],
+            expiration_date=row["expiration_date"]
         )
