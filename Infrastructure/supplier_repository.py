@@ -8,16 +8,29 @@ class SupplierRepository:
     def __init__(self, db: Database):
         self.db = db
 
+    def _get_smallest_available_id(self, cursor) -> int:
+        """Finds the smallest unused ID (fills gaps left by deleted suppliers)."""
+        cursor.execute("SELECT id FROM suppliers ORDER BY id")
+        existing_ids = [row["id"] for row in cursor.fetchall()]
+
+        expected_id = 1
+        for current_id in existing_ids:
+            if current_id != expected_id:
+                return expected_id
+            expected_id += 1
+        return expected_id
+
     def add(self, supplier: Supplier) -> int:
         conn = self.db.get_connection()
         try:
             cursor = conn.cursor()
+            new_id = self._get_smallest_available_id(cursor)
             cursor.execute(
-                "INSERT INTO suppliers (name, contact, email, address) VALUES (?, ?, ?, ?)",
-                (supplier.name, supplier.contact, supplier.email, supplier.address)
+                "INSERT INTO suppliers (id, name, contact, email, address) VALUES (?, ?, ?, ?, ?)",
+                (new_id, supplier.name, supplier.contact, supplier.email, supplier.address)
             )
             conn.commit()
-            return cursor.lastrowid
+            return new_id
         finally:
             conn.close()
 
