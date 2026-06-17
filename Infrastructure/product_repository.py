@@ -8,17 +8,34 @@ class ProductRepository:
     def __init__(self, db: Database):
         self.db = db
 
+    def _get_smallest_available_id(self, cursor) -> int:
+        """
+        Finds the smallest unused ID (the first gap in the sequence,
+        or the next number after the max if there's no gap).
+        Example: existing IDs [1, 4, 5, 7] -> returns 2.
+        """
+        cursor.execute("SELECT id FROM products ORDER BY id")
+        existing_ids = [row["id"] for row in cursor.fetchall()]
+
+        expected_id = 1
+        for current_id in existing_ids:
+            if current_id != expected_id:
+                return expected_id
+            expected_id += 1
+        return expected_id
+
     def add(self, product: Product) -> int:
         conn = self.db.get_connection()
         try:
             cursor = conn.cursor()
+            new_id = self._get_smallest_available_id(cursor)
             cursor.execute(
-                "INSERT INTO products (name, quantity, low_stock_threshold, supplier_id) "
-                "VALUES (?, ?, ?, ?)",
-                (product.name, product.quantity, product.low_stock_threshold, product.supplier_id)
+                "INSERT INTO products (id, name, quantity, low_stock_threshold, supplier_id) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (new_id, product.name, product.quantity, product.low_stock_threshold, product.supplier_id)
             )
             conn.commit()
-            return cursor.lastrowid
+            return new_id
         finally:
             conn.close()
 
