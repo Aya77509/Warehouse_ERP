@@ -17,9 +17,9 @@ class LoginWindow(QWidget):
         self.auth_service = auth_service
         self.on_success_callback = on_success_callback
         self.setWindowTitle("Warehouse ERP - Login")
-        self.setFixedSize(420, 380)
         self.setStyleSheet("background-color: #1e2530;")
         self._build_ui()
+        self.showMaximized()
 
     def _build_ui(self):
         outer_layout = QVBoxLayout(self)
@@ -85,8 +85,15 @@ class LoginWindow(QWidget):
         card_layout.addWidget(login_btn)
         card_layout.addWidget(hint)
 
-        outer_layout.addWidget(card)
-        outer_layout.setContentsMargins(20, 20, 20, 20)
+        card.setFixedWidth(420)
+
+        outer_layout.addStretch()
+        center_row = QHBoxLayout()
+        center_row.addStretch()
+        center_row.addWidget(card)
+        center_row.addStretch()
+        outer_layout.addLayout(center_row)
+        outer_layout.addStretch()
 
     @staticmethod
     def _input_style() -> str:

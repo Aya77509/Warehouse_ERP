@@ -37,6 +37,7 @@ class MainWindow(QMainWindow):
         self.setStyleSheet("background-color: #1e2530;")
 
         self._build_ui()
+        self.showMaximized()
 
     def _build_ui(self):
         central = QWidget()
