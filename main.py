@@ -1,19 +1,17 @@
 import sys
-
 from PyQt6.QtWidgets import QApplication
 
+from GUI.theme import global_stylesheet
 from Infrastructure.database import Database
 from Infrastructure.product_repository import ProductRepository
 from Infrastructure.movement_repository import MovementRepository
 from Infrastructure.supplier_repository import SupplierRepository
 from Infrastructure.user_repository import UserRepository
-
 from Kernel.auth_service import AuthService
 from Kernel.product_service import ProductService
 from Kernel.inventory_service import InventoryService
 from Kernel.supplier_service import SupplierService
 from Kernel.report_service import ReportService
-
 from GUI.login_window import LoginWindow
 from GUI.main_window import MainWindow
 
@@ -22,8 +20,10 @@ class Application:
     """Application bootstrapper: wires up infrastructure, kernel, and GUI layers."""
 
     def __init__(self):
+        # Create QApplication FIRST, inside the class
         self.qt_app = QApplication(sys.argv)
         self.qt_app.setStyle("Fusion")
+        self.qt_app.setStyleSheet(global_stylesheet())
 
         # Infrastructure layer
         self.db = Database()

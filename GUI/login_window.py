@@ -1,115 +1,87 @@
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QMessageBox, QFrame
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QMessageBox
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QFont
 
 from Kernel.auth_service import AuthService
 from Kernel.entities import User
+from GUI.theme import (
+    BG, SURFACE, BORDER, TEXT, TEXT_MUTED, PRIMARY,
+    FS_SMALL, FS_MICRO, RADIUS_XL,
+    Icons, qicon, primary_button, input_style, card_frame,
+)
+
+
 
 
 class LoginWindow(QWidget):
-    """Login screen for user authentication."""
-
     def __init__(self, auth_service: AuthService, on_success_callback):
         super().__init__()
         self.auth_service = auth_service
         self.on_success_callback = on_success_callback
-        self.setWindowTitle("Warehouse ERP - Login")
-        self.setStyleSheet("background-color: #1e2530;")
+        self.setWindowTitle("Warehouse  — Sign In")
+        self.setStyleSheet(f"background-color: {BG};")
         self._build_ui()
         self.showMaximized()
 
     def _build_ui(self):
-        outer_layout = QVBoxLayout(self)
-        outer_layout.setContentsMargins(0, 0, 0, 0)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
 
-        card = QFrame()
-        card.setStyleSheet("""
-            QFrame {
-                background-color: #2a3142;
-                border-radius: 12px;
-            }
-        """)
+        card = card_frame(padding=40)
+        card.setFixedWidth(440)
         card_layout = QVBoxLayout(card)
         card_layout.setContentsMargins(40, 40, 40, 40)
-        card_layout.setSpacing(18)
+        card_layout.setSpacing(14)
+
+        # Brand
+        logo = QLabel()
+        #logo.setPixmap(qicon(Icons.BRAND).pixmap(QSize(52, 52)))
+        logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        logo.setStyleSheet("background: transparent;")
 
         title = QLabel("Warehouse ERP")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
-        title.setStyleSheet("color: #ffffff;")
+        title.setFont(QFont("Helvetica", 22, QFont.Weight.Bold))
+        title.setStyleSheet(f"color: {TEXT}; background: transparent;")
 
-        subtitle = QLabel("Sign in to continue")
+        subtitle = QLabel("Sign in to your workspace")
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        subtitle.setStyleSheet("color: #9aa5b1; font-size: 13px;")
+        subtitle.setStyleSheet(f"color: {TEXT_MUTED}; font-size: {FS_SMALL}px; background: transparent;")
 
         self.username_input = QLineEdit()
         self.username_input.setPlaceholderText("Username")
-        self.username_input.setStyleSheet(self._input_style())
+        self.username_input.setStyleSheet(input_style())
 
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText("Password")
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self.password_input.setStyleSheet(self._input_style())
+        self.password_input.setStyleSheet(input_style())
         self.password_input.returnPressed.connect(self._handle_login)
 
-        login_btn = QPushButton("Login")
-        login_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        login_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #3b82f6;
-                color: white;
-                border-radius: 6px;
-                padding: 10px;
-                font-weight: bold;
-                font-size: 14px;
-            }
-            QPushButton:hover {
-                background-color: #2563eb;
-            }
-        """)
+        login_btn = primary_button("Sign in", Icons.LOGIN, variant="primary")
+        login_btn.setMinimumHeight(42)
         login_btn.clicked.connect(self._handle_login)
 
-        hint = QLabel("Default: admin / admin123  |  user / user123")
+        hint = QLabel("Demo accounts: admin / admin123 ")
         hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        hint.setStyleSheet("color: #6b7280; font-size: 11px;")
+        hint.setStyleSheet(f"color: {TEXT_MUTED}; font-size: {FS_MICRO}px; background: transparent;")
 
+        card_layout.addWidget(logo)
         card_layout.addWidget(title)
         card_layout.addWidget(subtitle)
-        card_layout.addSpacing(10)
+        card_layout.addSpacing(12)
         card_layout.addWidget(self.username_input)
         card_layout.addWidget(self.password_input)
-        card_layout.addSpacing(6)
+        card_layout.addSpacing(4)
         card_layout.addWidget(login_btn)
         card_layout.addWidget(hint)
 
-        card.setFixedWidth(420)
-
-        outer_layout.addStretch()
-        center_row = QHBoxLayout()
-        center_row.addStretch()
-        center_row.addWidget(card)
-        center_row.addStretch()
-        outer_layout.addLayout(center_row)
-        outer_layout.addStretch()
-
-    @staticmethod
-    def _input_style() -> str:
-        return """
-            QLineEdit {
-                background-color: #1e2530;
-                color: #ffffff;
-                border: 1px solid #3a4256;
-                border-radius: 6px;
-                padding: 10px;
-                font-size: 13px;
-            }
-            QLineEdit:focus {
-                border: 1px solid #3b82f6;
-            }
-        """
+        outer.addStretch()
+        row = QHBoxLayout(); row.addStretch(); row.addWidget(card); row.addStretch()
+        outer.addLayout(row)
+        outer.addStretch()
 
     def _handle_login(self):
         username = self.username_input.text()
