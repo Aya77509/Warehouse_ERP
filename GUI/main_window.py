@@ -9,12 +9,14 @@ from Kernel.entities import User
 from Kernel.product_service import ProductService
 from Kernel.inventory_service import InventoryService
 from Kernel.supplier_service import SupplierService
+from Kernel.category_service import CategoryService
 from Kernel.report_service import ReportService
 
 from GUI.dashboard_view import DashboardView
 from GUI.product_view import ProductView
 from GUI.inventory_view import InventoryView
 from GUI.supplier_view import SupplierView
+from GUI.category_view import CategoryView
 from GUI.report_view import ReportView
 
 from GUI.theme import (
@@ -28,12 +30,14 @@ from GUI.theme import (
 class MainWindow(QMainWindow):
     def __init__(self, user: User, product_service: ProductService,
                  inventory_service: InventoryService, supplier_service: SupplierService,
-                 report_service: ReportService, on_logout_callback):
+                 category_service: CategoryService, report_service: ReportService,
+                 on_logout_callback):
         super().__init__()
         self.user = user
         self.product_service = product_service
         self.inventory_service = inventory_service
         self.supplier_service = supplier_service
+        self.category_service = category_service
         self.report_service = report_service
         self.on_logout_callback = on_logout_callback
 
@@ -132,6 +136,7 @@ class MainWindow(QMainWindow):
             ("Dashboard", Icons.DASHBOARD),
             ("Products",  Icons.PRODUCTS),
             ("Inventory", Icons.INVENTORY),
+            ("Categories", Icons.CATEGORIES),
             ("Suppliers", Icons.SUPPLIERS),
             ("Reports",   Icons.REPORTS),
         ]
@@ -171,14 +176,16 @@ class MainWindow(QMainWindow):
         # ---------- Stacked content ---------- #
         self.stack = QStackedWidget()
         self.stack.setStyleSheet(f"background-color: {BG};")
-        self.dashboard_view = DashboardView(self.product_service, self.inventory_service)
-        self.product_view   = ProductView(self.product_service, self.supplier_service, self._on_data_change)
+        self.dashboard_view = DashboardView(self.product_service, self.inventory_service, self.category_service)
+        self.product_view   = ProductView(self.product_service, self.supplier_service,
+                                           self.category_service, self._on_data_change)
         self.inventory_view = InventoryView(self.product_service, self.inventory_service, self._on_data_change)
         self.supplier_view  = SupplierView(self.supplier_service, self._on_data_change)
+        self.category_view  = CategoryView(self.category_service, self._on_data_change)
         self.report_view    = ReportView(self.report_service)
 
         for w in (self.dashboard_view, self.product_view, self.inventory_view,
-                  self.supplier_view, self.report_view):
+                  self.category_view, self.supplier_view, self.report_view):
             self.stack.addWidget(w)
 
         root.addWidget(self.stack, 1)
@@ -189,7 +196,8 @@ class MainWindow(QMainWindow):
         if index == 0:   self.dashboard_view.refresh()
         elif index == 1: self.product_view.refresh()
         elif index == 2: self.inventory_view.refresh()
-        elif index == 3: self.supplier_view.refresh()
+        elif index == 3: self.category_view.refresh()
+        elif index == 4: self.supplier_view.refresh()
 
     def _on_data_change(self):
         self.dashboard_view.refresh()

@@ -9,13 +9,17 @@ class ProductService:
         self.product_repo = product_repo
 
     def create_product(self, name: str, quantity: int, low_stock_threshold: int = 10,
-                        supplier_id: int | None = None, expiration_date: str | None = None) -> Product:
+                        price: float = 0.0, supplier_id: int | None = None,
+                        category_id: int | None = None,
+                        expiration_date: str | None = None) -> Product:
         product = Product(
             id=None,
             name=name.strip(),
             quantity=quantity,
             low_stock_threshold=low_stock_threshold,
+            price=price,
             supplier_id=supplier_id,
+            category_id=category_id,
             expiration_date=expiration_date
         )
         product.validate()

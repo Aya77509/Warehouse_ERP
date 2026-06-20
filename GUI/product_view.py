@@ -11,6 +11,7 @@ from PyQt6.QtGui import QColor
 
 from Kernel.product_service import ProductService
 from Kernel.supplier_service import SupplierService
+from Kernel.category_service import CategoryService
 from Kernel.entities import Product
 
 from GUI.theme import (
@@ -60,15 +61,15 @@ class Toast(QFrame):
 
 # ---------- Product dialog ----------
 class ProductDialog(QDialog):
-    def __init__(self, supplier_service: SupplierService, product: Product | None = None,
-                 categories: list[str] | None = None):
+    def __init__(self, supplier_service: SupplierService, category_service: CategoryService,
+                 product: Product | None = None):
         super().__init__()
         self.supplier_service = supplier_service
+        self.category_service = category_service
         self.product = product
         self.setWindowTitle("Edit Product" if product else "Add Product")
         self.setMinimumWidth(440)
         self.setStyleSheet(f"background-color: {SURFACE}; color: {TEXT}; {input_style()}")
-        self._categories = categories or []
         self._build_ui()
 
     def _build_ui(self):
@@ -84,10 +85,9 @@ class ProductDialog(QDialog):
         self.price_input.setRange(0.0, 1_000_000.0); self.price_input.setDecimals(2)
         self.price_input.setSingleStep(0.5); self.price_input.setPrefix("$ ")
 
-        self.category_input = QComboBox(); self.category_input.setEditable(True)
-        self.category_input.addItem("")
-        for c in sorted({c for c in self._categories if c}):
-            self.category_input.addItem(c)
+        self.category_combo = QComboBox(); self.category_combo.addItem("None", None)
+        for c in self.category_service.list_categories():
+            self.category_combo.addItem(c.name, c.id)
 
         self.supplier_combo = QComboBox(); self.supplier_combo.addItem("None", None)
         for s in self.supplier_service.list_suppliers():
@@ -106,9 +106,10 @@ class ProductDialog(QDialog):
             self.name_input.setText(self.product.name)
             self.quantity_input.setValue(self.product.quantity)
             self.threshold_input.setValue(self.product.low_stock_threshold)
-            self.price_input.setValue(float(getattr(self.product, "price", 0.0) or 0.0))
-            cat = getattr(self.product, "category", "") or ""
-            self.category_input.setCurrentText(cat)
+            self.price_input.setValue(self.product.price)
+            if self.product.category_id is not None:
+                idx = self.category_combo.findData(self.product.category_id)
+                if idx >= 0: self.category_combo.setCurrentIndex(idx)
             if self.product.supplier_id is not None:
                 idx = self.supplier_combo.findData(self.product.supplier_id)
                 if idx >= 0: self.supplier_combo.setCurrentIndex(idx)
@@ -118,7 +119,7 @@ class ProductDialog(QDialog):
                 if qd.isValid(): self.expiration_input.setDate(qd)
 
         layout.addRow("Name *", self.name_input)
-        layout.addRow("Category", self.category_input)
+        layout.addRow("Category", self.category_combo)
         layout.addRow("Price", self.price_input)
         layout.addRow("Quantity", self.quantity_input)
         layout.addRow("Low Stock Threshold", self.threshold_input)
@@ -150,19 +151,20 @@ class ProductDialog(QDialog):
             "quantity": self.quantity_input.value(),
             "low_stock_threshold": self.threshold_input.value(),
             "supplier_id": self.supplier_combo.currentData(),
+            "category_id": self.category_combo.currentData(),
             "expiration_date": expiration_date,
             "price": round(self.price_input.value(), 2),
-            "category": self.category_input.currentText().strip(),
         }
 
 
 # ---------- Product view ----------
 class ProductView(QWidget):
     def __init__(self, product_service: ProductService, supplier_service: SupplierService,
-                 on_change_callback=None):
+                 category_service: CategoryService, on_change_callback=None):
         super().__init__()
         self.product_service = product_service
         self.supplier_service = supplier_service
+        self.category_service = category_service
         self.on_change_callback = on_change_callback
         self.setStyleSheet(f"background-color: {BG};")
         self._build_ui()
@@ -268,12 +270,13 @@ class ProductView(QWidget):
             keyword = self.search_input.text().strip().lower()
             products = self.product_service.search_products("")  # get all, filter locally
             suppliers = {s.id: s.name for s in self.supplier_service.list_suppliers()}
+            categories = {c.id: c.name for c in self.category_service.list_categories()}
 
             # name + category filter
             if keyword:
                 def match(p):
                     name = (p.name or "").lower()
-                    cat = (getattr(p, "category", "") or "").lower()
+                    cat = (categories.get(p.category_id, "") or "").lower()
                     return keyword in name or keyword in cat
                 products = [p for p in products if match(p)]
 
@@ -296,7 +299,7 @@ class ProductView(QWidget):
             elif mode == "Sort: Quantity ↑":
                 products.sort(key=lambda p: p.quantity)
             elif mode == "Sort: Price ↑":
-                products.sort(key=lambda p: float(getattr(p, "price", 0) or 0))
+                products.sort(key=lambda p: p.price)
 
             # ----- main table -----
             self.table.setRowCount(0)
@@ -304,11 +307,9 @@ class ProductView(QWidget):
                 row = self.table.rowCount(); self.table.insertRow(row)
                 self.table.setItem(row, 0, QTableWidgetItem(str(p.id)))
                 self.table.setItem(row, 1, QTableWidgetItem(p.name))
-                self.table.setItem(row, 2, QTableWidgetItem(getattr(p, "category", "") or "—"))
+                self.table.setItem(row, 2, QTableWidgetItem(categories.get(p.category_id, "") or "—"))
 
-                price = getattr(p, "price", None)
-                price_txt = f"${float(price):,.2f}" if price not in (None, "") else "—"
-                price_item = QTableWidgetItem(price_txt)
+                price_item = QTableWidgetItem(f"${p.price:,.2f}")
                 price_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.table.setItem(row, 3, price_item)
 
@@ -350,14 +351,12 @@ class ProductView(QWidget):
             for p in low:
                 r = self.low_table.rowCount(); self.low_table.insertRow(r)
                 self.low_table.setItem(r, 0, QTableWidgetItem(p.name))
-                self.low_table.setItem(r, 1, QTableWidgetItem(getattr(p, "category", "") or "—"))
+                self.low_table.setItem(r, 1, QTableWidgetItem(categories.get(p.category_id, "") or "—"))
                 qi = QTableWidgetItem(str(p.quantity))
                 qi.setForeground(QColor(DANGER))
                 qi.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.low_table.setItem(r, 2, qi)
-                price = getattr(p, "price", None)
-                self.low_table.setItem(
-                    r, 3, QTableWidgetItem(f"${float(price):,.2f}" if price not in (None, "") else "—"))
+                self.low_table.setItem(r, 3, QTableWidgetItem(f"${p.price:,.2f}"))
                 state = self._expiry_state(p)
                 ei = QTableWidgetItem(p.expiration_date or "—")
                 if state in ("expired", "soon"): ei.setForeground(QColor(DANGER))
@@ -371,27 +370,13 @@ class ProductView(QWidget):
         if sel < 0: return None
         return int(self.table.item(sel, 0).text())
 
-    def _existing_categories(self) -> list[str]:
-        try:
-            return [getattr(p, "category", "") or "" for p in self.product_service.search_products("")]
-        except Exception:
-            return []
-
-    def _call_service(self, fn, data: dict):
-        """Call service, dropping kwargs the backend doesn't accept (price/category)."""
-        try:
-            return fn(**data)
-        except TypeError:
-            trimmed = {k: v for k, v in data.items() if k not in ("price", "category")}
-            return fn(**trimmed)
-
     # ---------- CRUD ----------
     def _add_product(self):
-        dialog = ProductDialog(self.supplier_service, categories=self._existing_categories())
+        dialog = ProductDialog(self.supplier_service, self.category_service)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             data = dialog.get_data()
             try:
-                self._call_service(self.product_service.create_product, data)
+                self.product_service.create_product(**data)
                 self.refresh(); self._notify_change()
                 self.show_toast(f"Product “{data['name']}” added successfully", "success")
             except ValueError as e:
@@ -405,18 +390,16 @@ class ProductView(QWidget):
             self.show_toast("Select a product to edit", "info"); return
         try:
             product = self.product_service.get_product(pid)
-            dialog = ProductDialog(self.supplier_service, product,
-                                   categories=self._existing_categories())
+            dialog = ProductDialog(self.supplier_service, self.category_service, product)
             if dialog.exec() == QDialog.DialogCode.Accepted:
                 data = dialog.get_data()
                 product.name = data["name"]
                 product.quantity = data["quantity"]
                 product.low_stock_threshold = data["low_stock_threshold"]
+                product.price = data["price"]
                 product.supplier_id = data["supplier_id"]
+                product.category_id = data["category_id"]
                 product.expiration_date = data["expiration_date"]
-                # Optional fields — only set if entity supports them
-                if hasattr(product, "price"):    setattr(product, "price", data["price"])
-                if hasattr(product, "category"): setattr(product, "category", data["category"])
                 self.product_service.update_product(product)
                 self.refresh(); self._notify_change()
                 self.show_toast(f"Product “{data['name']}” updated", "success")

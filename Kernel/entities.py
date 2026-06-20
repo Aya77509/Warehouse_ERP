@@ -22,7 +22,9 @@ class Product:
     name: str
     quantity: int
     low_stock_threshold: int = 10
+    price: float = 0.0
     supplier_id: int | None = None
+    category_id: int | None = None
     expiration_date: str | None = None  # format: "YYYY-MM-DD", None = no expiration
 
     def is_low_stock(self) -> bool:
@@ -54,6 +56,8 @@ class Product:
             raise ValueError("Quantity cannot be negative.")
         if self.low_stock_threshold < 0:
             raise ValueError("Low stock threshold cannot be negative.")
+        if self.price < 0:
+            raise ValueError("Price cannot be negative.")
         if self.expiration_date:
             try:
                 datetime.strptime(self.expiration_date, "%Y-%m-%d")
@@ -72,6 +76,16 @@ class Supplier:
     def validate(self):
         if not self.name or not self.name.strip():
             raise ValueError("Supplier name cannot be empty.")
+
+
+@dataclass
+class Category:
+    id: int | None
+    name: str
+
+    def validate(self):
+        if not self.name or not self.name.strip():
+            raise ValueError("Category name cannot be empty.")
 
 
 @dataclass

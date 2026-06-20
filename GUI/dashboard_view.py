@@ -24,6 +24,7 @@ except Exception:
 
 from Kernel.product_service import ProductService
 from Kernel.inventory_service import InventoryService
+from Kernel.category_service import CategoryService
 
 from GUI.theme import (
     BG, SURFACE, SURFACE_2, BORDER, TEXT, TEXT_MUTED,
@@ -173,10 +174,12 @@ class AlertRow(QFrame):
 
 # ----------------------------- Main view ----------------------------- #
 class DashboardView(QWidget):
-    def __init__(self, product_service: ProductService, inventory_service: InventoryService):
+    def __init__(self, product_service: ProductService, inventory_service: InventoryService,
+                 category_service: CategoryService | None = None):
         super().__init__()
         self.product_service = product_service
         self.inventory_service = inventory_service
+        self.category_service = category_service
         self._alert_shown_this_session = False
         self.setStyleSheet(f"background-color: {BG};")
         self._build_ui()
@@ -331,9 +334,16 @@ class DashboardView(QWidget):
         self._clear_layout(self.category_chart_host)
         if not _CHARTS_OK:
             self.category_chart_host.addWidget(self._placeholder("Install PyQt6-Charts to see category breakdown")); return
+        category_names = {}
+        if self.category_service is not None:
+            try:
+                category_names = {c.id: c.name for c in self.category_service.list_categories()}
+            except Exception:
+                category_names = {}
         totals = Counter()
         for p in products:
-            cat = getattr(p, "category", None) or "Uncategorized"
+            cat_id = getattr(p, "category_id", None)
+            cat = category_names.get(cat_id, "Uncategorized") if cat_id is not None else "Uncategorized"
             totals[cat] += int(getattr(p, "quantity", 0) or 0)
         if not totals:
             self.category_chart_host.addWidget(self._placeholder("No category data available")); return

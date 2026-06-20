@@ -35,14 +35,24 @@ class Database:
         """)
 
         cursor.execute("""
+            CREATE TABLE IF NOT EXISTS categories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE
+            )
+        """)
+
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS products (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 quantity INTEGER NOT NULL DEFAULT 0,
                 low_stock_threshold INTEGER NOT NULL DEFAULT 10,
+                price REAL NOT NULL DEFAULT 0,
                 supplier_id INTEGER,
+                category_id INTEGER,
                 expiration_date TEXT,
-                FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL
+                FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL,
+                FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
             )
         """)
 
@@ -94,6 +104,14 @@ class Database:
         conn = self.get_connection()
         cursor = conn.cursor()
 
+        # Ensure categories table exists even on pre-existing DBs
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS categories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE
+            )
+        """)
+
         # Get existing columns for each table
         def get_columns(table: str) -> list[str]:
             cursor.execute(f"PRAGMA table_info({table})")
@@ -105,6 +123,10 @@ class Database:
             cursor.execute("ALTER TABLE products ADD COLUMN low_stock_threshold INTEGER NOT NULL DEFAULT 10")
         if "supplier_id" not in product_cols:
             cursor.execute("ALTER TABLE products ADD COLUMN supplier_id INTEGER")
+        if "category_id" not in product_cols:
+            cursor.execute("ALTER TABLE products ADD COLUMN category_id INTEGER")
+        if "price" not in product_cols:
+            cursor.execute("ALTER TABLE products ADD COLUMN price REAL NOT NULL DEFAULT 0")
         if "expiration_date" not in product_cols:
             cursor.execute("ALTER TABLE products ADD COLUMN expiration_date TEXT")
 

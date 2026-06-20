@@ -90,6 +90,7 @@ class Icons:
     DASHBOARD = SP.SP_ComputerIcon
     PRODUCTS  = SP.SP_FileDialogContentsView
     INVENTORY = SP.SP_DriveHDIcon
+    CATEGORIES = SP.SP_DirOpenIcon
     SUPPLIERS = SP.SP_FileDialogDetailedView
     REPORTS   = SP.SP_FileIcon
 
