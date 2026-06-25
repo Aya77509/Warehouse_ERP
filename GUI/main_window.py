@@ -5,6 +5,9 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QFont
 
+from PyQt6.QtWidgets import QPushButton, QSizePolicy
+from PyQt6.QtCore import QPoint
+
 from Kernel.entities import User
 from Kernel.product_service import ProductService
 from Kernel.inventory_service import InventoryService
@@ -46,6 +49,32 @@ class MainWindow(QMainWindow):
         self.setStyleSheet(f"background-color: {BG};")
         self._build_ui()
         self.showMaximized()
+
+        # --- AI Assistant dock ---
+        from GUI.ai_chat_dock import AiChatDock
+        self.ai_dock = AiChatDock(
+            product_service=product_service,
+            inventory_service=inventory_service,
+            supplier_service=supplier_service,
+            report_service=report_service,
+            parent=self,
+        )
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.ai_dock)
+        self.ai_dock.setFloating(True)
+
+# Toolbar toggle (adapt to your existing toolbar if you have one)
+        from PyQt6.QtGui import QAction
+        toggle = QAction("🤖 AI Assistant", self)
+        toggle.setCheckable(True)
+        toggle.setChecked(True)
+        toggle.toggled.connect(self.ai_dock.setVisible)
+        self.ai_dock.visibilityChanged.connect(toggle.setChecked)
+        if hasattr(self, "toolbar"):
+            self.toolbar.addAction(toggle)
+        else:
+            tb = self.addToolBar("AI")
+            tb.addAction(toggle)
+
 
     def _build_ui(self):
         central = QWidget(); self.setCentralWidget(central)
