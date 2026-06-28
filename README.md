@@ -36,7 +36,7 @@
   To verify the installation, ensure your Ollama service is running and execute the CLI test script:
 
     # Run the CLI test script using your project's virtual environment
-    uv run python C:\Users\Aya\.gemini\antigravity-cli\brain\1ef65e45-63d7-44d6-962d-
+    uv run python C:\Users\\.gemini\antigravity-cli\brain\1ef65e45-63d7-44d6-962d-
   2561e4edaf6c\scratch\test_ai.py
 
   Note: While Ollama is downloading the models in the background, the test script will gracefully
